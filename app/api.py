@@ -87,3 +87,9 @@ def delete_book(book_id: int, db: Session = Depends(get_session)):
     db.delete(db_book)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/books_info", response_model=List[BookResponse])
+def get_all_books(db: Session = Depends(get_session)):
+    books = db.query(Books).all()
+    return books
