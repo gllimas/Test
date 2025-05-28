@@ -1,3 +1,5 @@
+from starlette.responses import Response
+
 from database import get_session
 from fastapi import Depends, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -5,7 +7,7 @@ from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from typing import Optional
-from models import User
+from models import User, Readers
 from datetime import datetime, timedelta
 
 SECRET_KEY = "your_secret_key"
@@ -72,3 +74,23 @@ async def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depen
         raise credentials_exception
 
     return {"email": user.email}
+
+
+@router.get("/creat_readers")
+async def create_readers(readername: str, email: str, db: Session = Depends(get_session)):
+    db_reader = Readers(readername=readername, email=email)
+    db.add(db_reader)
+    db.commit()
+    db.refresh(db_reader)
+    return db_reader
+
+
+@router.delete("/readers/{readers_id}")
+async def delete_readers(readers_id: int, db: Session = Depends(get_session)):
+    db_reader = db.query(Readers).filter(Readers.id == readers_id).first()
+    if db_reader is None:
+        raise HTTPException(status_code=404)
+    db.delete(db_reader)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+

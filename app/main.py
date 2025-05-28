@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.responses import HTMLResponse
 from starlette.staticfiles import StaticFiles
 
-import auth, api
+import auth, api, control
 
 from database import engine
 
@@ -31,6 +31,7 @@ app = FastAPI(middleware=middleware, title='Face Recognition', description='Face
 
 app.include_router(auth.router, tags=["AUTH"], prefix="/auth")
 app.include_router(api.router, tags=["API"], prefix="/api")
+app.include_router(control.router, tags=["Control"], prefix="/control")
 
 create_db_and_tables()
 
