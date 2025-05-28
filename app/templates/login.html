@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+    <h1>Вход</h1>
+    <form id="loginForm">
+        <input type="text" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Пароль" required>
+        <button type="submit">Войти</button>
+    </form>
+    <div id="login-response"></div>
+
+    <script>
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    const response = await fetch('/auth/token', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            username: email,
+            password: password,
+        }),
+    });
+
+    if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('access_token', data.access_token);
+        window.location.href = '/';
+    } else {
+        document.getElementById('login-response').innerText = 'Ошибка входа: неверное имя пользователя или пароль';
+    }
+});
+    </script>
+
+
+</body>
+</html>
