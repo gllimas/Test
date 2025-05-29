@@ -1,30 +1,37 @@
-from starlette.responses import Response
+from starlette.responses import Response                          # Импортируем класс Response для отправки HTTP ответов
+from database import get_session                                  # Импортируем функцию для получения сессии
+from fastapi import Depends, HTTPException, status, APIRouter     # Импортируем необходимые инструменты FastAPI
+from fastapi.security import (OAuth2PasswordBearer,
+                              OAuth2PasswordRequestForm)          # Импортируем механизмы аутентификации
+from sqlalchemy.orm import Session                                # Импортируем сессию для работы с базой данных
+from jose import JWTError, jwt                                    # Импортируем библиотеки для работы с JWT
+from passlib.context import CryptContext                          # Импортируем библиотеку для хеширования паролей
+from typing import Optional                                       # Импортируем тип Optional для аннотаций
+from models import User, Readers                                  # Импортируем модели User и Readers
+from datetime import datetime, timedelta                          # Импортируем классы для работы с датами и временем
 
-from database import get_session
-from fastapi import Depends, HTTPException, status, APIRouter
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from typing import Optional
-from models import User, Readers
-from datetime import datetime, timedelta
 
-SECRET_KEY = "your_secret_key"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 10
+# Константы для настройки JWT
+SECRET_KEY = "your_secret_key"                                    # Секретный ключ для подписи токенов
+ALGORITHM = "HS256"                                               # Алгоритм шифрования
+ACCESS_TOKEN_EXPIRE_MINUTES = 10                                  # Время жизни токена в минутах(можно изменить)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
+# Создаем экземпляр маршрутизатора
 router = APIRouter()
 
+# Функция для хеширования пароля
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
+# Функция для проверки пароля
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+# Функция для создания JWT токена
 def create_access_token(data: dict, expires_delta: Optional[int] = None) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=expires_delta or ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -32,6 +39,7 @@ def create_access_token(data: dict, expires_delta: Optional[int] = None) -> str:
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+# Функция для получения текущего пользователя из токена
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -45,6 +53,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+
+# Роут для регистрации нового пользователя
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(username: str, password: str, email: str, db: Session = Depends(get_session)):
     hashed_password = get_password_hash(password)
@@ -54,6 +64,7 @@ def register(username: str, password: str, email: str, db: Session = Depends(get
     db.refresh(db_user)
     return {"username": db_user.username}
 
+# Роут для получения токена доступа
 @router.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_session)):
     user = db.query(User).filter(User.email == form_data.username).first()
@@ -67,6 +78,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+# Роут для получения информации о текущем пользователе
 @router.get("/users/me")
 async def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)):
     credentials_exception = HTTPException(
@@ -89,6 +101,7 @@ async def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depen
     return {"email": user.email}
 
 
+# Роут для создания нового читателя
 @router.get("/creat_readers")
 async def create_readers(readername: str, email: str, db: Session = Depends(get_session)):
     db_reader = Readers(readername=readername, email=email)
@@ -98,6 +111,7 @@ async def create_readers(readername: str, email: str, db: Session = Depends(get_
     return db_reader
 
 
+# Роут для удаления читателя
 @router.delete("/readers/{readers_id}")
 async def delete_readers(readers_id: int, db: Session = Depends(get_session)):
     db_reader = db.query(Readers).filter(Readers.id == readers_id).first()

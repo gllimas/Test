@@ -5,7 +5,7 @@ from sqlmodel import SQLModel, Field
 
 Base = SQLModel
 
-
+# Модель для User
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str = Field(unique=True, index=True, nullable=False)
@@ -16,6 +16,7 @@ class User(SQLModel, table=True):
         return f"<User (username={self.username})>"
 
 
+# Модель для книги
 class Books(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     bookname: str = Field(unique=True, index=True, nullable=False)
@@ -26,12 +27,15 @@ class Books(SQLModel, table=True):
 
 
 
+
+# модель для читателя
 class Readers(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     readername: str = Field(unique=None, index=True, nullable=False)
     email: str = Field(unique=True, index=True, nullable=False)
 
 
+# модель для таблицы кто взял книгу и какую
 class BorrowedBooks(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     book_id: int

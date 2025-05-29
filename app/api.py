@@ -1,16 +1,18 @@
 from fastapi import APIRouter, Depends, Query
-from sqlmodel import Session
-from starlette import status
-from starlette.exceptions import HTTPException
-from starlette.responses import  Response
-from models import Books
-from database import get_session
-from pydantic import BaseModel
+from sqlmodel import Session                                     # Импортируем сессию для работы с базой данных
+from starlette import status                                     # Импортируем коды статусов
+from starlette.exceptions import HTTPException                   # Импортируем исключение для HTTP ошибок
+from starlette.responses import  Response                        # Импортируем базовый класс для HTTP ответов
+from models import Books                                         # Импортируем модель Books
+from database import get_session                                 # Импортируем функцию для получения сессии
+from pydantic import BaseModel                                   # Импортируем модель Pydantic
 from typing import Optional, List
 
-router = APIRouter()
+router = APIRouter()                                             # Создаем экземпляр маршрутизатора
 
 
+
+# Pydantic-модель для создания книги
 class BookCreate(BaseModel):
     bookname: str
     author: str
@@ -19,6 +21,7 @@ class BookCreate(BaseModel):
     quantity: int = 1
 
 
+# Pydantic-модель для ответа с информацией о книге
 class BookResponse(BaseModel):
     id: int
     bookname: str
@@ -27,6 +30,8 @@ class BookResponse(BaseModel):
     isbn: Optional[str]
     quantity: int
 
+
+# Роут для создания новой книги
 @router.post("/creat_book")
 def create_book(book: BookCreate, db: Session = Depends(get_session)):
     db_book = Books(
@@ -42,6 +47,8 @@ def create_book(book: BookCreate, db: Session = Depends(get_session)):
     return Response(status_code=status.HTTP_201_CREATED)
 
 
+
+# Роут для чтения книги
 @router.get("/read_books", response_model=List[BookResponse])
 def read_books(
         id: Optional[int] = Query(None),
@@ -64,6 +71,7 @@ def read_books(
     return db_books
 
 
+# Роут для обновления книги
 @router.put("/books/{book_id}", response_model=BookResponse)
 async def update_book(book_id: int, book: BookCreate, db: Session = Depends(get_session)):
     db_book = db.query(Books).filter(Books.id == book_id).first()
@@ -79,6 +87,7 @@ async def update_book(book_id: int, book: BookCreate, db: Session = Depends(get_
     return Response(status_code=status.HTTP_200_OK)
 
 
+# Роут для удаления книги
 @router.delete("/books/{book_id}", response_model=BookResponse)
 def delete_book(book_id: int, db: Session = Depends(get_session)):
     db_book = db.query(Books).filter(Books.id == book_id).first()

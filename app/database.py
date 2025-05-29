@@ -5,7 +5,7 @@ sqlite_url = f"sqlite:///{sqlite_file_name}"
 connect_args = {"check_same_thread": False, "timeout": 30}
 engine = create_engine(sqlite_url, echo=True, connect_args=connect_args)
 
-def get_session():
+def get_session():                                          # Функция для получения сессии базы данных
     session = Session(engine)
     try:
         yield session

@@ -1,28 +1,26 @@
-from datetime import datetime, date
-from typing import List
-
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from datetime import datetime, date                            # Импортируем классы для работы с датами и временем
+from typing import List                                        # Импортируем тип List
+from fastapi import APIRouter, Depends                         # Импортируем APIRouter и Depends из FastAPI
+from pydantic import BaseModel                                 # Импортируем базовый класс для моделей
 from sqlalchemy import func
-from sqlmodel import Session
+from sqlmodel import Session                                   # Импортируем класс Session для работы с базой данных
+from starlette.exceptions import HTTPException                 # Импортируем класс для обработки HTTP-исключений
+from auth import get_current_user                              # Импортируем функцию для получения текущего пользователя
+from models import Books, BorrowedBooks                        # Импортируем модели Books и BorrowedBooks
+from database import get_session                               # Импортируем функцию для получения сессии базы данных
 
-from starlette.exceptions import HTTPException
 
-from auth import get_current_user
-from models import Books, BorrowedBooks
-from database import get_session
-
+# Класс для ответа о выданной книге
 class BookBorrowedResponse(BaseModel):
     book_id: int
     bookname: str
     author: str
     borrow_date: date
 
-
-
+# Создаем экземпляр маршрутизатора
 router = APIRouter()
 
-
+# Роут для выдачи книги читателю
 @router.get("/issue_a_book")
 async def issue_book(book_id: int, reader_id: int, db: Session = Depends(get_session)):
     # Получаем книгу по ID
@@ -57,6 +55,7 @@ async def issue_book(book_id: int, reader_id: int, db: Session = Depends(get_ses
 
     return {"message": f"Книга '{book.bookname}' выдана читателю с ID {reader_id}"}
 
+# Роут для возврата книги
 @router.get("/return_book")
 async def return_book(book_id: int, reader_id: int, db: Session = Depends(get_session)):
     borrowed_record = db.query(BorrowedBooks).filter(
@@ -78,7 +77,7 @@ async def return_book(book_id: int, reader_id: int, db: Session = Depends(get_se
     return {"massage": f" Книга '{book.bookname}' возвращена"}
 
 
-
+# Роут для получения списка выданных книг для читателя
 @router.get("/reader/{reader_id}/borrowed_books", response_model=List[BookBorrowedResponse])
 async def get_borrowed_books_for_reader(
     reader_id: int,
